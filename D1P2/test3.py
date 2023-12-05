@@ -4,5 +4,6 @@ def read_data(file_path):
     return data
 
 
-# set the file_path as "abc.txt"
+# set the file_path as "abc.txt"  or "D1P1\abc.txt"
+file_path = "D1P2\example.txt" # "D1P1\abc.txt" or "abc.txt"
 
