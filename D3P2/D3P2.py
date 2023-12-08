@@ -1,81 +1,106 @@
-import string
+import re
 
-class Solution:
-    def solutionCode(self, fileName: str) -> int:
-        def sum_gear_ratios(schematic):
-            # Parse the schematic into a 2D array (called schematic_parse) of numbers and symbols. As the example below, '467' becomes [467, 467, 467] and '...' becomes ['.', '.', '.']
-            # '467..114..' -> [[467, 467, 467 '.', '.', 114, 114, 114, '.', '.']]
-            # '...*......' -> [['.', '.', '.', '*', '.', '.', '.', '.', '.']]
-            # '..35..633.' -> [['.', '.', 35, 35, '.', '.', 633, 633, 633, '.']
-            # '3..*..*...' -> [[3, '.', '.', '*', '.', '.', '*', '.', '.', '.']]
-            # '617*......' -> [[617, 617, 617, '*', '.', '.', '.', '.', '.', '.']]
-            # '.....+.58.' -> [['.', '.', '.', '.', '.', '+', '.', 58, 58, '.']]
-            schematic_parse = []
-            for line in schematic:
-                line_parse = []
-                for cell in line:
-                    if cell.isdigit():
-                        line_parse.append(int(cell))
-                    else:
-                        line_parse.append(cell)
-                schematic_parse.append(line_parse)
+INPUT = "D3P2\data.txt"
+sum1 = 0
+sum2 = 0
 
-            # Define the eight possible directions to check
-            directions = [(i, j) for i in range(-1, 2) for j in range(-1, 2) if i != 0 or j != 0]
+def checkSymbol(s):
+    """
+    Check if a given string contains a non-digit and non-dot symbol.
 
-            total_ratio = 0
+    Args:
+        s (str): The string to check.
 
-            # Iterate over each cell in the array
-            for i in range(len(schematic_parse)):
-                for j in range(len(schematic_parse[i])):
-                    # If the cell contains a '*', check its surrounding cells
-                    if schematic_parse[i][j] == '*':
-                        part_numbers = []
-                        for di, dj in directions:
-                            ni, nj = i + di, j + dj
-                            if 0 <= ni < len(schematic_parse) and 0 <= nj < len(schematic_parse[ni]) and isinstance(schematic_parse[ni][nj], int):
-                                part_numbers.append(schematic_parse[ni][nj])
-                        # If exactly two of the surrounding cells contain numbers, calculate the gear ratio
-                        if len(part_numbers) == 2:
-                            total_ratio += part_numbers[0] * part_numbers[1]
-
-            return total_ratio
-
-            # Define the eight possible directions to check
-            directions = [(i, j) for i in range(-1, 2) for j in range(-1, 2) if i != 0 or j != 0]
-
-            total_ratio = 0
-
-            # Iterate over each cell in the array
-            for i in range(len(schematic)):
-                for j in range(len(schematic[i])):
-                    # If the cell contains a '*', check its surrounding cells
-                    if schematic[i][j] == '*':
-                        part_numbers = []
-                        for di, dj in directions:
-                            ni, nj = i + di, j + dj
-                            if 0 <= ni < len(schematic) and 0 <= nj < len(schematic[ni]) and isinstance(schematic[ni][nj], int):
-                                part_numbers.append(schematic[ni][nj])
-                        # If exactly two of the surrounding cells contain numbers, calculate the gear ratio
-                        if len(part_numbers) == 2:
-                            total_ratio += part_numbers[0] * part_numbers[1]
-
-            return total_ratio
-
-        with open(fileName, "r") as file:
-            lines = file.read().splitlines()
-            return sum_gear_ratios(lines)
+    Returns:
+        re.Match: A match object if a non-digit and non-dot symbol is found, None otherwise.
+    """
+    return re.search(r"[^\d\.]", s)
 
 
+def createLoc(x, y):
+    """
+    Create a location string in the format "x:x,y:y".
 
-# Unit Test
-test = Solution()
-directory = 'D3P1'
-fileName = '\example.txt'
-result = test.solutionCode(directory+fileName)
-print('example:', result)
+    Args:
+        x (int): The x-coordinate.
+        y (int): The y-coordinate.
+
+    Returns:
+        str: The location string.
+    """
+    return f"x:{x},y:{y}"
 
 
-fileName = '\data.txt'
-result = test.solutionCode(directory+fileName)
-print('data:', result)
+def checkIfGear(s, x, y):
+    """
+    Check if a given symbol represents a gear and return the corresponding location string.
+
+    Args:
+        s (str): The symbol to check.
+        x (int): The x-coordinate.
+        y (int): The y-coordinate.
+
+    Returns:
+        str: The location string if the symbol represents a gear, an empty string otherwise.
+    """
+    return f"{createLoc(x, y)}" if s == "*" else ""
+
+with open(INPUT, "r") as f:
+    lines = f.read().splitlines()
+    allNumbers = []
+    allGears = {}
+    for lineIdx, line in enumerate(lines):
+        numbers = [[int(m.group(0)), m.span()] for m in re.finditer(r"(\d+)", line)]
+        for num in numbers:
+            isPart = False
+            [n, (mStart, mEnd)] = num
+            startIdx = max(0, mStart - 1)
+            endIdx = min(len(lines) - 1, mEnd)
+            gearCoor = ""
+
+            # CHECK ADJACENT LEFT
+            symbol = checkSymbol(line[startIdx])
+            if symbol:
+                isPart = True
+                gearCoor = checkIfGear(symbol.group(0), startIdx, lineIdx)
+
+            # CHECK ADJACENT RIGHT
+            symbol = checkSymbol(line[endIdx])
+            if symbol:
+                isPart = True
+                gearCoor = checkIfGear(symbol.group(0), endIdx, lineIdx)
+
+            # CHECK ADJACENT TOP ROW
+            if lineIdx != 0:
+                for sIdx in range(startIdx, endIdx + 1):
+                    symbol = checkSymbol(lines[lineIdx - 1][sIdx])
+                    if symbol:
+                        isPart = True
+                        gearCoor = checkIfGear(symbol.group(0), sIdx, lineIdx - 1)
+                        break
+
+            # CHECK ADJACENT BOTTOM ROW
+            if lineIdx < len(lines) - 1:
+                for sIdx in range(startIdx, endIdx + 1):
+                    symbol = checkSymbol(lines[lineIdx + 1][sIdx])
+                    if symbol:
+                        if n == 114:
+                            print(sIdx, startIdx, symbol.group(0))
+                        isPart = True
+                        gearCoor = checkIfGear(symbol.group(0), sIdx, lineIdx + 1)
+                        break
+
+            if isPart:
+                sum1 += n
+                if gearCoor:
+                    numList = allGears.get(gearCoor)
+                    numList = numList + [n] if isinstance(numList, list) else [n]
+                    allGears[gearCoor] = numList
+                    if len(numList) == 2:
+                        [p0, p1] = numList
+                        gearRatio = p0 * p1
+                        sum2 += gearRatio
+
+
+print("Part 1 Sum", sum1)
+print("Part 2 Sum", sum2)
