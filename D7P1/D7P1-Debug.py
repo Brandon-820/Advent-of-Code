@@ -1,40 +1,56 @@
-import sys
-import re
+# INPUT = "D7P1\example.txt"  # Output: 6440
+INPUT = "D7P1\data.txt"
 
-# INPUT = "D6P1\example.txt"
-INPUT = "D6P1\example2.txt"
-# INPUT = "D6P1\data.txt"
+'''
+dataFile = """
+32T3K 765
+T55J5 684
+KK677 28
+KTJJT 220
+QQQJA 483
+"""
 
+output/hands = [('32T3K', '765'), ('T55J5', '684'), ('KK677', '28'), ('KTJJT', '220'), ('QQQJA', '483')]
+
+'''
 with open(INPUT, "r") as dataFile:
     data = dataFile.read()
+    hands = []
+    for line in data.splitlines():
+        hand, bid = line.split()
+        hands.append((hand, bid))
 
-dataSet = []
 
-for m in re.finditer(r"\w+:(\s+\d+)+", data):
-    dataSet.append([int(num) for num in re.findall(r"\d+", m.group(0))])
+def camel_cards(hands):
+    card_values = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14}
+    hand_scores = []
 
-# dataSet[0] is Maximum Time to Win for each game
-# dataSet[1] is Minimum Distance to Win for each game
-# Speed = Spent-Time * 1
-# Traveled Time = Maximum Time to Win - Spent-Time
-# Traveled Time * Speed = Traveled Distance
-# len(dataSet[0]) is the number of games
-# Winning conditions are: (Spent-Time + Travel Time) < Maximum Time to Win and Traveled Distance > Minimum Distance to Win
-# Output: number of ways to win each game
-def waysToWin(dataSet):
-    ways = []
-    for i in range(len(dataSet[0])): # for each game
-        ways.append(0)
-        for spent_time in range(dataSet[0][i] + 1):  # for each spent-time # j is the spent-time
-            if ((spent_time * 1) * (dataSet[0][i] - spent_time)) > dataSet[1][i]: # dataSet[1][i] is the minimum distance to win
-                ways[i] += 1
-    return ways
+    def hand_score(hand):
+        counts = [hand.count(card) for card in '23456789TJQKA']
+        if 5 in counts:
+            score = 6  # Five of a kind
+        elif 4 in counts:
+            score = 5  # Four of a kind
+        elif 3 in counts and 2 in counts:
+            score = 4  # Full house
+        elif 3 in counts:
+            score = 3  # Three of a kind
+        elif counts.count(2) == 2:
+            score = 2  # Two pair
+        elif 2 in counts:
+            score = 1  # One pair
+        else:
+            score = 0  # High card
+        return (score, [card_values[card] for card in hand])
 
-ways = waysToWin(dataSet)
+    for hand, bid in hands:
+        hand_scores.append((hand_score(hand), int(bid)))
 
-from functools import reduce
-numberOfWays = reduce(lambda x, y: x * y, ways)
+    hand_scores.sort()
 
-print(dataSet)
-print(waysToWin(dataSet))
-print(numberOfWays)
+    total_winnings = sum(rank * bid for rank, (_, bid) in enumerate(hand_scores, 1)) # rank is the rank of the hand (1 is the highest rank) and bid is the bid for the hand  # enumerate(hand_scores, 1) is a list of tuples of the form (rank, (score, bid)) sorted by score in descending order
+
+    return total_winnings
+
+# hands = [('32T3K', '765'), ('T55J5', '684'), ('KK677', '28'), ('KTJJT', '220'), ('QQQJA', '483')]
+print(camel_cards(hands))
