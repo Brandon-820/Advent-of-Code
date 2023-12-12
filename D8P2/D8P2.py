@@ -1,3 +1,4 @@
+# reference: https://www.reddit.com/r/adventofcode/comments/18df7px/comment/kcqkq3c/?utm_source=reddit&utm_medium=web2x&context=3
 # INPUT = "D8P2\example.txt"
 # INPUT = "D8P2\example2.txt"
 INPUT = "D8P2\data.txt"
